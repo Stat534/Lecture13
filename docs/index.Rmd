@@ -1,0 +1,110 @@
+---
+title: "Lecture 13: Other Covariance Functions"
+output:
+  revealjs::revealjs_presentation:
+    theme: white
+    center: true
+    transition: none
+    incremental: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+
+```
+
+# Class Intro
+
+## Intro Questions 
+- Compare the strengths and weaknesses of the model fitting tools we saw last class.
+
+- For Today:
+    - Building Covariance Functions
+    
+# Geostatistical Theory
+
+## Stochastic Process Specification
+- Given the assumption that a Gaussian process is reasonable for the spatial process, a valid covariance function needs to be specified.
+- Up to this point, we have largely worked with isotropic covariance functions. In particular, the spherical and exponential covariance functions have primarily been used.
+- However, a Gaussian process is flexible and can use any valid covariance function.
+
+## Covariance Functions
+
+- A valid covariance function $C(\boldsymbol{h})$, defined as $Cov(Y(\boldsymbol{s}),Y(\boldsymbol{s+h}))$, for any finite set of sites $\boldsymbol{s_1}, \dots, \boldsymbol{s_n}$ and $a_1, \dots, a_n$ should satisfy
+$$Var\left[\sum_i a_i Y(\boldsymbol{s_i})\right]= \sum_{i,j} a_i a_j Cov(Y(\boldsymbol{s_i}),Y(\boldsymbol{s_j})) = \sum_{i,j} a_i a_j C(\boldsymbol{s_i}-\boldsymbol{s_j})\geq 0$$
+with strict inequality if all the a_i are not zero.
+- In other words, $C(\boldsymbol{h})$ needs to be a positive definite function, which includes the following properties
+1. $C(\boldsymbol{0}) \geq 0$
+2. $|C(\boldsymbol{h})| \leq C(\boldsymbol{0})$
+
+## Bochner's Theorem
+
+- Bochner's Theorem provides necessary and sufficient conditions for positive definiteness, stating $C(\boldsymbol{h})$ is positive definite, if and only if, 
+$$C(\boldsymbol{h}) =\int \cos(\boldsymbol{w}^T\boldsymbol{h})G(d\boldsymbol{w})$$
+where $G()$ is bounded, positive, and symmetric around 0 in $\mathcal{R}^r$.
+- This equation is also related to the Fourier transformation, of $C(\boldsymbol{h})$, and the associated spectral distribution.
+
+## Constructing covariance functions
+
+- There are three  approaches for building correlation functions. For all cases let $C_1, \dots, C_m$ be valid correlation functions
+1. *Mixing:* $C(\boldsymbol{h}) = \sum_{i} p_i C_i$ is also valid if $\sum_{i} p_i =1$.
+2. *Products:* $C(\boldsymbol{h}) = \prod_{i} C_i$
+3. *Convolution:* $C_{12}(\boldsymbol{h}) = \int C_1(\boldsymbol{h} -\boldsymbol{t})C_2(\boldsymbol{t}) d\boldsymbol{t}$ again this is based on a Fourier transform.
+
+## Choosing Covariance Structure
+
+Suppose a collaborator suggests two possible valid covariance functions and asks you which one is better. The collaborator also wants to select important covariates related to their study. How would you proceed.
+
+1. Pick one or two questions to ask your collaborator.
+2. Suggest two strategies for selecting the best model.
+
+## Smoothness
+- Many one-parameter isotropic covariance functions will be quite similar.
+
+- Another consideration for choosing the correlation function is the theoretical smoothness property of the correlation.
+
+- Again the spatial process is a continuous surface that is observed at a finite number of locations, or when latent random effects are implied at observed locations.
+
+- The Matern class of covariance functions contains a parameter, $\nu,$ to control smoothness. With $\nu = \infty$ this is a Gaussian correlation function and with $\nu = 1/2$ this results in an exponential correlation function. 
+
+## Matern Covariance Motivation
+
+- "Expressed in a different way, use of the Matern covariance function as a model enables the data to inform about $\nu$; we can learn about process smoothness despite observing the process at only a finite number of locations."
+- The Matern covariance function was originally derived  as the characteristic function from a Cauchy spectral density.
+
+## Matern Covariance Specification
+- The Matern covariance function is written as 
+$$\frac{\sigma^2}{2^{\nu -1}\Gamma(\nu)} (\phi d)^\nu K_\nu(\phi d),$$
+where $\Gamma()$ is a gamma function and $K_\nu$ is the modified Bessel function of order $\nu$.
+
+## Nonstationary Model Overview
+
+- Let $w(\boldsymbol{s})$ be a mean 0 and variance 1 stationary spatial process with correlation function $\rho$. Then consider $v(\boldsymbol{s}) = \sigma(\boldsymbol{s}) w(\boldsymbol{s})$.
+- What is the variance of $v(\boldsymbol{s}$? What about $cov(v(\boldsymbol{s}),v(\boldsymbol{s'}))$?
+- The variance is $\sigma^2(\boldsymbol{s})$ and the covariance is $\sigma(\boldsymbol{s}) \sigma(\boldsymbol{s'}) \rho(\boldsymbol{s}-\boldsymbol{s'})$
+- This formulation results in nonhomogenous variance; spatial correlations are still stationary.
+- $\sigma(\boldsymbol{s})$ could be modeled as a function of covariates.
+
+## More nonstationary ideas
+- Nonstationarity can also me included through deformation and kernel mixing.
+- Deformation transforms a geographic area into a new transformed area that is stationary and isotropic.
+- Kernel mixing is another approach that builds a non-stationary function that is similar to a set of basis functions.
+
+
+## Anisotropy
+
+
+# Model Selection Ideas
+
+## DIC
+
+## Cross - Validation
+
+## Posterior Predictive Samples
+
+## Predictive Accuracy
+
+## Model Coverage
+
+## CRPS
