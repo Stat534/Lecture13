@@ -11,7 +11,9 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 knitr::opts_chunk$set(message = FALSE)
-
+library(dplyr)
+library(ggplot2)
+library(knitr)
 ```
 
 # Class Intro
@@ -33,7 +35,7 @@ knitr::opts_chunk$set(message = FALSE)
 
 - A valid covariance function $C(\boldsymbol{h})$, defined as $Cov(Y(\boldsymbol{s}),Y(\boldsymbol{s+h}))$, for any finite set of sites $\boldsymbol{s_1}, \dots, \boldsymbol{s_n}$ and $a_1, \dots, a_n$ should satisfy
 $$Var\left[\sum_i a_i Y(\boldsymbol{s_i})\right]= \sum_{i,j} a_i a_j Cov(Y(\boldsymbol{s_i}),Y(\boldsymbol{s_j})) = \sum_{i,j} a_i a_j C(\boldsymbol{s_i}-\boldsymbol{s_j})\geq 0$$
-with strict inequality if all the a_i are not zero.
+with strict inequality if all the $a_i$ are not zero.
 - In other words, $C(\boldsymbol{h})$ needs to be a positive definite function, which includes the following properties
 1. $C(\boldsymbol{0}) \geq 0$
 2. $|C(\boldsymbol{h})| \leq C(\boldsymbol{0})$
@@ -81,7 +83,7 @@ where $\Gamma()$ is a gamma function and $K_\nu$ is the modified Bessel function
 ## Nonstationary Model Overview
 
 - Let $w(\boldsymbol{s})$ be a mean 0 and variance 1 stationary spatial process with correlation function $\rho$. Then consider $v(\boldsymbol{s}) = \sigma(\boldsymbol{s}) w(\boldsymbol{s})$.
-- What is the variance of $v(\boldsymbol{s}$? What about $cov(v(\boldsymbol{s}),v(\boldsymbol{s'}))$?
+- What is the variance of $v(\boldsymbol{s})$? What about $cov(v(\boldsymbol{s}),v(\boldsymbol{s'}))$?
 - The variance is $\sigma^2(\boldsymbol{s})$ and the covariance is $\sigma(\boldsymbol{s}) \sigma(\boldsymbol{s'}) \rho(\boldsymbol{s}-\boldsymbol{s'})$
 - This formulation results in nonhomogenous variance; spatial correlations are still stationary.
 - $\sigma(\boldsymbol{s})$ could be modeled as a function of covariates.
@@ -93,18 +95,129 @@ where $\Gamma()$ is a gamma function and $K_\nu$ is the modified Bessel function
 
 
 ## Anisotropy
+- Geometric anisotropy refers to the case where the coordinate space is anisotropic, but can be transformed to an isotropic space.
+- The transformation can result in a rotation or stretching of coordinate axes.
+- In general consider the correlation function,
+$$\rho(\boldsymbol{h}; \phi) = \phi_0(||L\boldsymbol{h}||; \phi)$$
+where $L$ is a $d \times d$ matrix that controls the transformation.
+
+## Geometric Anisotropy Model
+- Let $\boldsymbol{Y}(\boldsymbol{s}) = \mu(\boldsymbol{s}) + w(\boldsymbol{s}) + \epsilon(\boldsymbol{s})$,
+thus $\boldsymbol{Y}(\boldsymbol{s}) \sim N(\mu(\boldsymbol{s}), \Sigma(\tau^2, \sigma^2, \phi, B))$, where $B = L^T L$.
+- The covariance matrix is defined as $\Sigma(\tau^2, \sigma^2, \phi, B)) = \tau^2 I + \sigma^2 H((\boldsymbol{h}^T B \boldsymbol{h}^T)^{\frac{1}{2}}),$ where $H((\boldsymbol{h}^T B \boldsymbol{h}^T)^{\frac{1}{2}})$ has entries of $\rho((\boldsymbol{h_{ij}}^T B \boldsymbol{h_{ij}}^T)^{\frac{1}{2}}))$ with $\rho()$ being a valid covariance function, typically including $\phi$ and $\boldsymbol{h_{ij}} = \boldsymbol{s_i} - \boldsymbol{s_j}$.
+
+## Geometric Anisotropy Visual
+- Consider four points positioned on a unit circle.
+```{r, fig.width=4, fig.height = 4, fig.align = 'center'}
+x = c(-1, 0, 0, 1)
+y = c(0, -1, 1, 0)
+gg_circle <- function(r, xc, yc, color="black", fill=NA, ...) {
+    x <- xc + r*cos(seq(0, pi, length.out=100))
+    ymax <- yc + r*sin(seq(0, pi, length.out=100))
+    ymin <- yc + r*sin(seq(0, -pi, length.out=100))
+    annotate("ribbon", x=x, ymin=ymin, ymax=ymax, color=color, fill=fill, ...)
+}
+
+data.frame(x=x, y=y) %>% ggplot(aes(x=x,y=y))  + gg_circle(r=1, xc=0, yc=0, color = 'gray') + geom_point(shape = c('1','2','3','4'), size=5)
+
+```
+
+- How far apart are each set of points?
+
+## Geometric Anisotropy Exercise 1
+Now consider a set of correlation functions. For each, calculate the correlation matrix and discuss the impact of $B$ on the correlation. Furthermore, how does B change the geometry of the correlation?
+
+1. $\rho() = \exp(-\boldsymbol{h_{ij}}^T B \boldsymbol{h_{ij}}^T)^{\frac{1}{2}})),$ where $B = \begin{pmatrix}
+1 & 0 \\
+0 & 1 \\
+\end{pmatrix}$
+
+2. $\rho() = \exp(-\boldsymbol{h_{ij}}^T B \boldsymbol{h_{ij}}^T)^{\frac{1}{2}})),$ where $B = \begin{pmatrix}
+2 & 0 \\
+0 & 1 \\
+\end{pmatrix}$
+
+3. $\rho() = \exp(-\boldsymbol{h_{ij}}^T B \boldsymbol{h_{ij}}^T)^{\frac{1}{2}})),$ where $B = \begin{pmatrix}
+3 & 1 \\
+1 & 1 \\
+\end{pmatrix}$
+
+## Geometric Anisotropy: Solution 1
+```{r}
+h.x <- matrix(0, 4, 4)
+h.y <- matrix(0, 4, 4)
+for (i in 1:4){
+  for (j in 1:4){
+    h.x[i,j] <- x[i] - x[j]
+    h.y[i,j] <- y[i] - y[j]
+  }
+}
+```
+
+1. $\rho() = \exp(-\boldsymbol{h_{ij}}^T I \boldsymbol{h_{ij}}^T)^{\frac{1}{2}}))$
+```{r}
+cor.mat <- matrix(0, 4, 4)
+for (i in 1:4){
+  for (j in 1:4){
+    cor.mat[i,j] <- exp(- sqrt(t(c(h.x[i,j], h.y[i,j])) %*% diag(2)  %*% (c(h.x[i,j], h.y[i,j]))) )
+  }
+}
+cor.mat %>% kable(digits = 3)
+```
+
+## Geometric Anisotropy: Solution 2
+
+2. $\rho() = \exp(-\boldsymbol{h_{ij}}^T B \boldsymbol{h_{ij}}^T)^{\frac{1}{2}})),$ where $B = \begin{pmatrix}
+2 & 0 \\
+0 & 1 \\
+\end{pmatrix}$
+```{r}
+cor.mat <- matrix(0, 4, 4)
+for (i in 1:4){
+  for (j in 1:4){
+    cor.mat[i,j] <- exp(- sqrt(t(c(h.x[i,j], h.y[i,j])) %*% matrix(c(2,0,0,1),2,2)  %*% (c(h.x[i,j], h.y[i,j]))) )
+  }
+}
+cor.mat %>% kable(digits = 3)
+```
+
+## Geometric Anisotrop: Solution 3
+
+3. $\rho() = \exp(-\boldsymbol{h_{ij}}^T B \boldsymbol{h_{ij}}^T)^{\frac{1}{2}})),$ where $B = \begin{pmatrix}
+3 & 1 \\
+1 & 1 \\
+\end{pmatrix}$
+```{r}
+cor.mat <- matrix(0, 4, 4)
+for (i in 1:4){
+  for (j in 1:4){
+    cor.mat[i,j] <- exp(- sqrt(t(c(h.x[i,j], h.y[i,j])) %*% matrix(c(3,1,1,1),2,2)  %*% (c(h.x[i,j], h.y[i,j]))) )
+  }
+}
+cor.mat %>% kable(digits = 3)
+```
 
 
-# Model Selection Ideas
+## More Geometric Anisotropy
+- The matrix $B$ relates to the orientation of a transformed ellipse.
+- The (effective) range for any angle $\eta$ is determined by the equation
+$$\rho(r_\eta(\tilde{\boldsymbol{h}}_{\eta}^T B \tilde{\boldsymbol{h}}_{\eta}^T)^{\frac{1}{2}}) = .05,$$
+where $\tilde{\boldsymbol{h}}_{\eta}$ is a unit vector in the direction $\eta$.
 
-## DIC
+## Fitting Geometric Anisotropy Models
+- Okay, so if we suspect that geometric anisotrophy is present, how do we fit the model? That is, what is necessary in estimating this model?
+- In addition to $\sigma^2$ and $\tau^2$ we need to fit $B$.
+- What about $\phi$? What is $\phi$ when $B = \begin{pmatrix}
+1 & 0 \\
+0 & 1 \\
+\end{pmatrix}$?
 
-## Cross - Validation
+## Priors for B
+- While $B$ is a matrix, it is just another unknown parameter.
+- Hence, to fit a Bayesian model we need a prior distribution for $B$.
+- One option for the positive definite matrix is the Wishart distribution, which is a bit like a matrix-variate gamma distribution.
 
-## Posterior Predictive Samples
-
-## Predictive Accuracy
-
-## Model Coverage
-
-## CRPS
+## Up Next
+- Spatial GLMs
+- Model Selection
+- Areal Data
